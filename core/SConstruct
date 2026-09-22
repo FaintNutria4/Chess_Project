@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+env = Environment()
+
+if env["PLATFORM"] == "win32":
+    env.Append(CCFLAGS=["/std:c++17", "/EHsc"])
+else:
+    env.Append(CCFLAGS=["-std=c++17"])
+
+env.Append(CPPPATH=["."])
+
+test_program = env.Program(
+    "tests/chess_core_tests",
+    source=Glob("domain/*.cpp") + Glob("tests/*.cpp"),
+)
+
+Default(test_program)

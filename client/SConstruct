@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+import os
+
+env = SConscript("godot-cpp/SConstruct")
+
+core_sources = SConscript("../core/SConscript")
+
+env.Append(CPPPATH=["src/", env.Dir("#../core")])
+sources = Glob("src/*.cpp") + Glob("src/interop/*.cpp") + core_sources
+
+library = env.SharedLibrary(
+    "bin/libchess{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+    source=sources,
+)
+
+Default(library)

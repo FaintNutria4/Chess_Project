@@ -1,0 +1,19 @@
+# Godot
+client/.godot/
+client/.cache/
+
+# Build artifacts
+*.obj
+*.lib
+*.exp
+*.pdb
+*.dll
+*.exe
+.sconsign.dblite
+compile_commands.json
+
+# Vendored godot-cpp (has its own .git — git would add it as a broken submodule)
+client/godot-cpp/
+
+# Godot import sidecars for ignored .obj build artifacts
+*.obj.import
