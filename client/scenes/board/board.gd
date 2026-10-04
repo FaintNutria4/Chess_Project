@@ -12,16 +12,25 @@ const DARK_COLOR := Color(0.52, 0.38, 0.24)
 var chess: ChessGame
 var squares := {}
 var pieces := {}
+var pending_move := {}
 
 
 func _ready() -> void:
 	chess = ChessGame.new()
+	$Promotion.piece_chosen.connect(_on_promotion_chosen)
 	_build_squares()
 	_sync_pieces()
 
 
 func square_position(coords: Vector2i) -> Vector2:
 	return (Vector2(coords.x, 7 - coords.y) + Vector2(0.5, 0.5)) * SQUARE_SIZE
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		_cancel_pending()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_cancel_pending()
 
 
 func _build_squares() -> void:
@@ -38,16 +47,45 @@ func _build_squares() -> void:
 
 
 func _on_square_clicked(square: Area2D) -> void:
+	if not pending_move.is_empty():
+		if square.coords == pending_move["from"] or square.coords == pending_move["to"]:
+			return
+		_cancel_pending()
 	var response: Dictionary = chess.select_square(square.coords)
 	_clear_highlights()
-	if response.get("moved", false):
-		_sync_pieces()
-		move_played.emit(response["result"])
+	var move: Dictionary = response.get("move", {})
+	if not move.is_empty():
+		if move["promotion"]:
+			pending_move = move
+			$Promotion.open(chess.get_turn(), square_position(move["to"]))
+		else:
+			_submit_move(move, "")
 	elif response.get("selected", false):
-		var moves: Array = response["moves"]
-		for coords in moves:
-			if squares.has(coords):
-				squares[coords].set_highlight(true)
+		for entry in response["moves"]:
+			var to: Vector2i = entry["to"]
+			if squares.has(to):
+				squares[to].set_highlight(true)
+
+
+func _submit_move(move: Dictionary, piece_name: String) -> void:
+	var result: Dictionary = chess.try_move(move["from"], move["to"], piece_name)
+	_cancel_pending()
+	if result["legal"]:
+		_sync_pieces()
+		move_played.emit(result)
+
+
+func _on_promotion_chosen(piece_name: String) -> void:
+	if pending_move.is_empty():
+		return
+	_submit_move(pending_move, piece_name)
+
+
+func _cancel_pending() -> void:
+	pending_move = {}
+	$Promotion.close()
+	_clear_highlights()
+	chess.deselect()
 
 
 func _clear_highlights() -> void:

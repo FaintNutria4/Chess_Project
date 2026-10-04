@@ -43,8 +43,8 @@ Conversions live in `client/src/interop/convert.*`. `piece_type_from_name` maps 
 
 | Method | Returns | Description |
 |---|---|---|
-| `try_move(from: Vector2i, to: Vector2i, promotion: String)` | `Dictionary` | Low-level move application. Delegates to `GameState::try_move` (see matching rules below). Promotion strings other than rook/bishop/knight are treated as queen. |
-| `legal_moves_for(square: Vector2i)` | `Array[Vector2i]` | Destination squares for the piece on `square` (empty `Array` if invalid/empty square). |
+| `try_move(from: Vector2i, to: Vector2i, promotion: String)` | `Dictionary` | **The only method that applies a move** (see matching rules below). Empty `promotion` = ordinary move (or implicit queen if the destination requires promotion); `"rook"`/`"bishop"`/`"knight"` are explicit, anything else is queen. Clears selection. Returns the result dictionary, or `legal: false` for illegal moves. |
+| `legal_moves_for(square: Vector2i)` | `Array[Dictionary]` | Legal moves for the piece on `square`; each entry `{ from: Vector2i, to: Vector2i, promotion: bool }` (empty `Array` if invalid/empty square). Promotion destinations appear once with `promotion: true`. |
 | `get_pieces()` | `Array[Dictionary]` | Every occupied square, rank-major order. Each entry: `{ square: Vector2i, color: String, type: String }`. |
 
 ### Selection state machine (used by `board.gd`)
@@ -53,23 +53,23 @@ Conversions live in `client/src/interop/convert.*`. `piece_type_from_name` maps 
 var response: Dictionary = chess.select_square(coords)
 ```
 
-`select_square` owns selection internally (`selected` square + `has_selected` flag):
+`select_square` owns selection internally (`selected` square + `has_selected` flag) and **never applies moves**:
 
-- **Click own piece** → selects it, returns destinations to highlight.
-- **Click another square while selected**:
-  - destination reachable → applies the move (implicit **queen** promotion — the built `Move` uses defaults), returns `moved: true` with the result;
-  - otherwise → falls through: clears selection, and re-selects if the clicked square holds a piece of the side to move.
+- **Click own piece** → selects it, returns its legal moves to highlight.
+- **Click a destination while selected** → clears selection and returns the chosen `move` dict; the caller applies it with `try_move` (opening the promotion picker first when `move["promotion"]` is `true`).
+- **Any other click** → clears selection, re-selecting if the clicked square holds a piece of the side to move.
 
 **Response contract** (all keys always present):
 
 ```gdscript
 {
-    "selected": bool,          # a piece is now selected
-    "moved": bool,             # a move was applied this call
-    "moves": Array[Vector2i],  # legal destinations (when selected)
-    "result": Dictionary       # move result (when moved), else {}
+    "selected": bool,             # a piece is now selected
+    "moves": Array[Dictionary],   # legal moves when selected: { from, to, promotion }
+    "move": Dictionary            # { from, to, promotion } when the click completed a move choice, else {}
 }
 ```
+
+`deselect()` clears the selection and any highlighted moves — used by `board.gd` to cancel a pending promotion.
 
 ### Property
 
@@ -83,7 +83,7 @@ var response: Dictionary = chess.select_square(coords)
 |---|---|---|
 | `hello()` | `String` | `"Hello from C++! Player: " + player_name` — connectivity smoke test. |
 
-## Result dictionary (from `try_move` / `select_square` → `result`)
+## Result dictionary (from `try_move`)
 
 Built by `chess::interop::result_to_dict`:
 
@@ -100,11 +100,12 @@ Built by `chess::interop::result_to_dict`:
 | `fen` | `String` | Position after the move |
 | `turn` | `String` | Side to move next (`"white"` / `"black"`) |
 
-`main.gd` reads `turn`, `checkmate`, `stalemate`, `check` to build the HUD string.
+`main.gd` reads `checkmate`, `stalemate`, `check` to build the HUD string (`turn` only to name the checkmate winner); the label carries no turn indicator.
 
 ## Implementation notes
 
 - Selection state (`selected`, `has_selected`) lives in the facade, not in GDScript.
-- `select_square` builds plain `Move{from, to}` values; via `GameState::try_move` matching, a promotion to the 8th rank therefore always becomes a **queen** promotion (candidate with `promotion == Queen` matches a non-promotion request).
-- `try_move` sets `is_promotion = true` and resolves `promotion` through `piece_type_from_name`; non-promotion candidates still match regardless (see `core-api.md`), so the method is safe for ordinary moves too.
+- `select_square` never builds or applies a `Move` for a destination click; it only reports the move dict (`move_to_dict` in `interop/convert.*`). Applying is exclusively `try_move`, so a promotion is resolved in a **single call** carrying `from`, `to` and the chosen piece.
+- `GameState::try_move` matches a requested promotion piece against the 4 generated candidates; an empty `promotion` maps to queen (implicit queen fallback for a promotion destination).
+- Move lists are deduplicated by destination: the four promotion candidates collapse into one entry with `promotion: true`, so the UI can pop the promotion picker for that destination.
 - Illegal moves return `legal: false` and never mutate state.

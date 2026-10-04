@@ -47,6 +47,14 @@ chess::PieceType piece_type_from_name(const godot::String &name) {
 	return chess::PieceType::Queen;
 }
 
+godot::Dictionary move_to_dict(const chess::Move &move) {
+	godot::Dictionary out;
+	out["from"] = from_square(move.from);
+	out["to"] = from_square(move.to);
+	out["promotion"] = move.is_promotion;
+	return out;
+}
+
 godot::Dictionary result_to_dict(const chess::MoveResult &result, const godot::String &fen, chess::Color next_turn) {
 	godot::Dictionary out;
 	out["legal"] = result.legal;

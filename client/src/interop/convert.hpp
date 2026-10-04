@@ -15,6 +15,7 @@ godot::Vector2i from_square(const chess::Square &square);
 godot::String color_name(chess::Color color);
 godot::String piece_type_name(chess::PieceType type);
 chess::PieceType piece_type_from_name(const godot::String &name);
+godot::Dictionary move_to_dict(const chess::Move &move);
 godot::Dictionary result_to_dict(const chess::MoveResult &result, const godot::String &fen, chess::Color next_turn);
 
 } // namespace chess::interop

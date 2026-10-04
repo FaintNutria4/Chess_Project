@@ -76,13 +76,17 @@ sequenceDiagram
     User->>SQ: click destination
     SQ->>BD: signal clicked(square)
     BD->>CG: select_square(coords)
-    CG->>GS: try_move(from, to)
+    CG-->>BD: {selected: false, moves: [], move: {from, to, promotion}}
+    BD->>CG: try_move(from, to, "")
+    CG->>GS: try_move(Move)
     GS-->>CG: MoveResult
-    CG-->>BD: {moved: true, result: {...}}
+    CG-->>BD: {legal, fen, turn, ...}
     BD->>BD: _sync_pieces() (respawn from get_pieces())
     BD->>MN: signal move_played(result)
-    MN->>HUD: set_status("Black to move" / "Check!" / ...)
+    MN->>HUD: set_status("" / "Check!" / "Checkmate! White wins" / ...)
 ```
+
+When `move["promotion"]` is `true`, `board.gd` stops: it stores the move, shows `promotion.tscn` over the promotion square, and only after the player picks a piece makes the **single** `try_move(from, to, piece)` call — no state changed, nothing sent, until then. Escape / right-click / clicking another square cancels via `_cancel_pending()`.
 
 ## Key decisions
 

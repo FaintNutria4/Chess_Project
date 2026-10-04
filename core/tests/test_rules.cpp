@@ -100,6 +100,56 @@ int main() {
 		CHECK(state.load_fen(fen));
 		CHECK(state.to_fen() == fen);
 	}
+	{
+		GameState state;
+		std::string fen = "4k3/P7/8/8/8/8/8/4K3 w - - 0 1";
+		CHECK(state.load_fen(fen));
+		CHECK(state.to_fen() == fen);
+		CHECK(!state.castling_rights().white_king_side);
+		CHECK(!state.castling_rights().white_queen_side);
+		CHECK(!state.castling_rights().black_king_side);
+		CHECK(!state.castling_rights().black_queen_side);
+	}
+	{
+		GameState state;
+		CHECK(state.load_fen("4k3/P7/8/8/8/8/8/4K3 w - - 0 1"));
+		std::vector<Move> moves = state.legal_moves_from(Square{ 0, 6 });
+		int promotions = 0;
+		bool saw_queen = false;
+		bool saw_rook = false;
+		bool saw_bishop = false;
+		bool saw_knight = false;
+		for (const Move &move : moves) {
+			if (move.from == Square{ 0, 6 } && move.to == Square{ 0, 7 } && move.is_promotion) {
+				++promotions;
+				saw_queen = saw_queen || move.promotion == PieceType::Queen;
+				saw_rook = saw_rook || move.promotion == PieceType::Rook;
+				saw_bishop = saw_bishop || move.promotion == PieceType::Bishop;
+				saw_knight = saw_knight || move.promotion == PieceType::Knight;
+			}
+		}
+		CHECK(promotions == 4);
+		CHECK(saw_queen && saw_rook && saw_bishop && saw_knight);
+	}
+	{
+		GameState state;
+		CHECK(state.load_fen("4k3/P7/8/8/8/8/8/4K3 w - - 0 1"));
+		Move promotion;
+		promotion.from = Square{ 0, 6 };
+		promotion.to = Square{ 0, 7 };
+		promotion.is_promotion = true;
+		promotion.promotion = PieceType::Bishop;
+		MoveResult result = state.try_move(promotion);
+		CHECK(result.legal && result.promoted);
+		CHECK((state.board().at(Square{ 0, 7 })->type == PieceType::Bishop));
+	}
+	{
+		GameState state;
+		CHECK(state.load_fen("4k3/P7/8/8/8/8/8/4K3 w - - 0 1"));
+		MoveResult result = state.try_move(Move{ Square{ 0, 6 }, Square{ 0, 7 } });
+		CHECK(result.legal && result.promoted);
+		CHECK((state.board().at(Square{ 0, 7 })->type == PieceType::Queen));
+	}
 
 	std::cout << checks << " checks, " << failures << " failures\n";
 	return failures == 0 ? 0 : 1;

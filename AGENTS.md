@@ -26,6 +26,7 @@ This repository is a Godot 4.7 chess client with a pure C++ rules engine. Read t
 | Class registration, entry symbol | `client/src/register_types.cpp` |
 | Click handling, highlights, piece spawning | `client/scenes/board/board.gd` |
 | Square input / colors | `client/scenes/board/square.gd`, `square.tscn` |
+| Promotion picker (queen/rook/bishop/knight choice) | `client/scenes/board/promotion.gd`, `promotion.tscn` |
 | Piece visuals (placeholder polygons) | `client/scenes/board/piece.gd`, `piece.tscn` |
 | HUD status text | `client/scenes/ui/hud.gd` |
 | Top-level wiring | `client/scenes/main/main.gd`, `main.tscn` |
@@ -40,7 +41,7 @@ Run from PowerShell on Windows.
 # Core tests (run first after any core/ change)
 cd core
 scons
-.\tests\chess_core_tests.exe          # expect: 30 checks, 0 failures
+.\tests\chess_core_tests.exe          # expect: 45 checks, 0 failures
 
 # Build the extension (from client/)
 cd client
@@ -60,7 +61,9 @@ GDExtension DLLs hot-reload when the editor window regains focus; no restart nee
 
 ## Contracts (do not change keys without updating GDScript)
 
-- `ChessGame.select_square(coords)` → `{ selected: bool, moved: bool, moves: Array[Vector2i], result: Dictionary }`
+- `ChessGame.select_square(coords)` → `{ selected: bool, moves: Array[{from: Vector2i, to: Vector2i, promotion: bool}], move: Dictionary }` — never applies a move; `move` is `{from, to, promotion}` when the click completed a move choice, else `{}`
+- `ChessGame.try_move(from, to, promotion)` → result dictionary — the **only** method that applies a move; `promotion` is `""` for ordinary moves or `"queen"|"rook"|"bishop"|"knight"`
+- `ChessGame.deselect()` → clears the selection (used to cancel a pending promotion)
 - Result dictionary keys: `legal`, `captured`, `en_passant`, `castled`, `promoted`, `check`, `checkmate`, `stalemate`, `fen`, `turn`
 - `get_pieces()` → `Array` of `{ square: Vector2i, color: "white"|"black", type: "pawn"|"knight"|"bishop"|"rook"|"queen"|"king" }`
 - Coordinates: `Vector2i(file, rank)`, both `0..7`, a1 = `(0, 0)`. On screen, rank is flipped: `position = (Vector2(file, 7 - rank) + Vector2(0.5, 0.5)) * 64`.
@@ -75,7 +78,6 @@ GDExtension DLLs hot-reload when the editor window regains focus; no restart nee
 
 ## Known limitations
 
-- Promotion via UI is always **queen** (`select_square` builds a `Move` with default promotion; `GameState::try_move` matches the queen candidate).
 - Piece visuals are placeholder `Polygon2D` shapes; sprite art slots exist under `client/assets/sprites/`.
 - `server/` is empty; the planned sync format is FEN (`GameState::to_fen` / `load_fen`).
 - `client/node_2d.*`, `client/src/test.gd`, `client/src/node_2d.tscn` are leftover editor templates.

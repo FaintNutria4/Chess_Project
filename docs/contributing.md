@@ -36,7 +36,7 @@ Hard rules:
   ```powershell
   cd core
   scons
-  .\tests\chess_core_tests.exe     # must end with: 30 checks, 0 failures
+  .\tests\chess_core_tests.exe     # must end with: 45 checks, 0 failures
   ```
 
 - Tests are plain C++ (`core/tests/test_rules.cpp`), no framework. Use the `CHECK` macro; wrap brace-initializers in extra parentheses: `CHECK((sq == Square{1, 2}))`.
@@ -84,7 +84,7 @@ scons platform=windows target=template_release arch=x86_64 api_version=4.7
 
 ## Current scope boundaries
 
-- Promotion through the UI is always queen (facade builds default `Move`).
+- Promotion is resolved through a picker (`promotion.tscn`) before any move is applied: `select_square` returns the move dict, `board.gd` opens the picker when `promotion` is set, and `try_move(from, to, piece)` is the single call that applies it.
 - `server/` is intentionally empty; protocol work will reuse FEN from `core/`.
 - Network autoload methods are stubs — do not treat them as working.
 - Leftover editor templates (`client/node_2d.*`, `client/src/test.gd`, `client/src/node_2d.tscn`) are dead files, safe to ignore or delete when noticed.

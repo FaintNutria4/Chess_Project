@@ -11,10 +11,10 @@
 namespace chess {
 
 struct CastlingRights {
-	bool white_king_side = true;
-	bool white_queen_side = true;
-	bool black_king_side = true;
-	bool black_queen_side = true;
+	bool white_king_side = false;
+	bool white_queen_side = false;
+	bool black_king_side = false;
+	bool black_queen_side = false;
 };
 
 struct StateSnapshot {

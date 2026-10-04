@@ -37,7 +37,7 @@ scons
 .\tests\chess_core_tests.exe
 ```
 
-Expected: `30 checks, 0 failures`.
+Expected: `45 checks, 0 failures`.
 
 ### 2. Build the GDExtension
 

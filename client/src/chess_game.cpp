@@ -11,6 +11,7 @@ void ChessGame::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("try_move", "from", "to", "promotion"), &ChessGame::try_move);
 	ClassDB::bind_method(D_METHOD("legal_moves_for", "square"), &ChessGame::legal_moves_for);
 	ClassDB::bind_method(D_METHOD("select_square", "square"), &ChessGame::select_square);
+	ClassDB::bind_method(D_METHOD("deselect"), &ChessGame::deselect);
 	ClassDB::bind_method(D_METHOD("get_pieces"), &ChessGame::get_pieces);
 	ClassDB::bind_method(D_METHOD("get_turn"), &ChessGame::get_turn);
 	ClassDB::bind_method(D_METHOD("is_in_check"), &ChessGame::is_in_check);
@@ -44,9 +45,10 @@ Dictionary ChessGame::try_move(const Vector2i &from, const Vector2i &to, const S
 	chess::Move move;
 	move.from = chess::interop::to_square(from);
 	move.to = chess::interop::to_square(to);
-	move.is_promotion = true;
+	move.is_promotion = !promotion.is_empty();
 	move.promotion = chess::interop::piece_type_from_name(promotion);
 	chess::MoveResult result = state.try_move(move);
+	has_selected = false;
 	return chess::interop::result_to_dict(result, String(state.to_fen().c_str()), state.turn());
 }
 
@@ -57,7 +59,18 @@ Array ChessGame::legal_moves_for(const Vector2i &square) const {
 		return out;
 	}
 	for (const chess::Move &move : state.legal_moves_from(sq)) {
-		out.push_back(chess::interop::from_square(move.to));
+		bool duplicate = false;
+		for (int i = 0; i < out.size(); ++i) {
+			Dictionary entry = out[i];
+			Vector2i entry_to = entry["to"];
+			if (entry_to == chess::interop::from_square(move.to)) {
+				duplicate = true;
+				break;
+			}
+		}
+		if (!duplicate) {
+			out.push_back(chess::interop::move_to_dict(move));
+		}
 	}
 	return out;
 }
@@ -65,9 +78,8 @@ Array ChessGame::legal_moves_for(const Vector2i &square) const {
 Dictionary ChessGame::select_square(const Vector2i &coords) {
 	Dictionary response;
 	response["selected"] = false;
-	response["moved"] = false;
 	response["moves"] = Array();
-	response["result"] = Dictionary();
+	response["move"] = Dictionary();
 
 	chess::Square sq = chess::interop::to_square(coords);
 	if (!sq.valid()) {
@@ -78,22 +90,11 @@ Dictionary ChessGame::select_square(const Vector2i &coords) {
 		chess::Square from = selected;
 		has_selected = false;
 		if (!(sq == from)) {
-			bool destination_reachable = false;
 			for (const chess::Move &move : state.legal_moves_from(from)) {
 				if (move.to == sq) {
-					destination_reachable = true;
-					break;
+					response["move"] = chess::interop::move_to_dict(move);
+					return response;
 				}
-			}
-			if (destination_reachable) {
-				chess::Move move;
-				move.from = from;
-				move.to = sq;
-				chess::MoveResult result = state.try_move(move);
-				response["moved"] = true;
-				response["result"] = chess::interop::result_to_dict(
-						result, String(state.to_fen().c_str()), state.turn());
-				return response;
 			}
 		}
 	}
@@ -105,11 +106,26 @@ Dictionary ChessGame::select_square(const Vector2i &coords) {
 		response["selected"] = true;
 		Array moves;
 		for (const chess::Move &move : state.legal_moves_from(sq)) {
-			moves.push_back(chess::interop::from_square(move.to));
+			bool duplicate = false;
+			for (int i = 0; i < moves.size(); ++i) {
+				Dictionary entry = moves[i];
+				Vector2i entry_to = entry["to"];
+				if (entry_to == chess::interop::from_square(move.to)) {
+					duplicate = true;
+					break;
+				}
+			}
+			if (!duplicate) {
+				moves.push_back(chess::interop::move_to_dict(move));
+			}
 		}
 		response["moves"] = moves;
 	}
 	return response;
+}
+
+void ChessGame::deselect() {
+	has_selected = false;
 }
 
 Array ChessGame::get_pieces() const {

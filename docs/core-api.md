@@ -108,12 +108,14 @@ void apply_move(Board &board, const Move &move,
 
 ```cpp
 struct CastlingRights {
-    bool white_king_side = true;
-    bool white_queen_side = true;
-    bool black_king_side = true;
-    bool black_queen_side = true;
+    bool white_king_side = false;
+    bool white_queen_side = false;
+    bool black_king_side = false;
+    bool black_queen_side = false;
 };
 ```
+
+Defaults are all `false` so `load_fen`'s `rights_ = CastlingRights{}` reset is correct; the FEN castling field then sets the parsed bits (`-` leaves none). `reset()` / `START_FEN` restores `KQkq` by parsing.
 
 ### `StateSnapshot`
 
@@ -171,9 +173,9 @@ Headless suite, no framework — a `CHECK` macro counts checks/failures.
 ```powershell
 cd core
 scons
-.\tests\chess_core_tests.exe    # 30 checks, 0 failures
+.\tests\chess_core_tests.exe    # 45 checks, 0 failures
 ```
 
-Covered today: initial 20 legal moves; `e2-e4` FEN + en passant target; illegal long pawn move rejected with state unchanged; en passant capture; kingside castling (rook placement); pinned piece has no moves; fool's-mate checkmate; stalemate; undo after two plies; FEN round-trip.
+Covered today: initial 20 legal moves; `e2-e4` FEN + en passant target; illegal long pawn move rejected with state unchanged; en passant capture; kingside castling (rook placement); pinned piece has no moves; fool's-mate checkmate; stalemate; undo after two plies; FEN round-trip (incl. `-` castling rights reset); promotion (4 candidates generated, explicit piece applied, implicit queen).
 
 **Adding tests:** append blocks in `main()` in `test_rules.cpp`, use `CHECK(...)` (wrap brace-initializers in extra parens: `CHECK((sq == Square{1, 2}))` — the macro takes one argument). Re-run `scons` and the executable; update the expected count in docs if you add checks.

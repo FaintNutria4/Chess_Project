@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bril7q0c4rmwj"]
 
 [ext_resource type="Script" uid="uid://cetbrewg05mqt" path="res://scenes/board/board.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/board/promotion.tscn" id="2"]
 
 [node name="Board" type="Node2D" unique_id=636968917]
 script = ExtResource("1")
@@ -8,3 +9,5 @@ script = ExtResource("1")
 [node name="Squares" type="Node2D" parent="." unique_id=1246314411]
 
 [node name="Pieces" type="Node2D" parent="." unique_id=960060899]
+
+[node name="Promotion" parent="." instance=ExtResource("2")]

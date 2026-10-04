@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/board/promotion.gd" id="1"]
+
+[node name="Promotion" type="CanvasLayer"]
+layer = 10
+visible = false
+script = ExtResource("1")
+
+[node name="Panel" type="PanelContainer" parent="."]
+
+[node name="Pieces" type="HBoxContainer" parent="Panel"]
+
+[node name="Queen" type="Button" parent="Panel/Pieces"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Rook" type="Button" parent="Panel/Pieces"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Bishop" type="Button" parent="Panel/Pieces"]
+custom_minimum_size = Vector2(72, 72)
+
+[node name="Knight" type="Button" parent="Panel/Pieces"]
+custom_minimum_size = Vector2(72, 72)
+
+[connection signal="pressed" from="Panel/Pieces/Queen" to="." method="_on_piece_pressed" binds=["queen"]]
+[connection signal="pressed" from="Panel/Pieces/Rook" to="." method="_on_piece_pressed" binds=["rook"]]
+[connection signal="pressed" from="Panel/Pieces/Bishop" to="." method="_on_piece_pressed" binds=["bishop"]]
+[connection signal="pressed" from="Panel/Pieces/Knight" to="." method="_on_piece_pressed" binds=["knight"]]

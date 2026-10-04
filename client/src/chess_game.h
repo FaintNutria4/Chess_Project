@@ -31,6 +31,7 @@ public:
 	Dictionary try_move(const Vector2i &from, const Vector2i &to, const String &promotion);
 	Array legal_moves_for(const Vector2i &square) const;
 	Dictionary select_square(const Vector2i &square);
+	void deselect();
 	Array get_pieces() const;
 	String get_turn() const;
 	bool is_in_check() const;
