@@ -4,7 +4,7 @@ This repository is a Godot 4.7 chess client with a pure C++ rules engine. Read t
 
 ## Invariants (never break these)
 
-1. **`core/domain/` is pure C++17.** It must never include `godot_cpp/*` or any Godot header. It compiles headless so it can be unit-tested and linked by the future `server/`.
+1. **`core/domain/` is pure C++17.** It must never include `godot_cpp/*` or any Godot header. It compiles headless so it can be unit-tested and linked by `server/`.
 2. **All chess rules live in C++.** GDScript must not implement or duplicate rules (move generation, check detection, FEN, turn order). GDScript only presents state and forwards input.
 3. **Signals flow up, method calls flow down.** Children (`square.gd`) emit signals; parents (`board.gd`, `main.gd`) react and call methods downward. Do not let children reach into siblings or parents.
 4. **Only `board.gd` and autoloads talk to the `ChessGame` facade.** Other scripts go through `board.gd`.
@@ -21,6 +21,10 @@ This repository is a Godot 4.7 chess client with a pure C++ rules engine. Read t
 | Piece/square/move/result value types | `core/domain/types.hpp` |
 | 8×8 storage | `core/domain/board.*` |
 | Domain tests | `core/tests/test_rules.cpp` |
+| HTTP + WebSocket server, accept loop, sessions | `server/ChessServer.cpp` |
+| Server build (SCons, Boost include path, compile DB) | `server/SConstruct` |
+| Server connection test | `server/tests/test_connection.ps1` |
+| Vendored Boost headers (gitignored) | `server/external/boost_1_92_0/` |
 | GDScript-visible API, selection state machine | `client/src/chess_game.{h,cpp}` |
 | Variant ↔ domain conversion | `client/src/interop/convert.{hpp,cpp}` |
 | Class registration, entry symbol | `client/src/register_types.cpp` |
@@ -42,6 +46,12 @@ Run from PowerShell on Windows.
 cd core
 scons
 .\tests\chess_core_tests.exe          # expect: 45 checks, 0 failures
+
+# Server (from server/; plain scons also writes server/compile_commands.json for clangd)
+cd server
+scons                                  # builds chess_server.exe
+.\chess_server.exe                     # listens on 127.0.0.1:8080 (Ctrl+C to stop)
+.\tests\test_connection.ps1            # expect: 6 checks, 0 failures (auto-starts/kills server)
 
 # Build the extension (from client/)
 cd client
@@ -79,7 +89,7 @@ GDExtension DLLs hot-reload when the editor window regains focus; no restart nee
 ## Known limitations
 
 - Piece visuals are placeholder `Polygon2D` shapes; sprite art slots exist under `client/assets/sprites/`.
-- `server/` is empty; the planned sync format is FEN (`GameState::to_fen` / `load_fen`).
+- `server/ChessServer.cpp` is a Boost.Beast HTTP + WebSocket echo placeholder: HTTP `GET` answers `200 OK` (`chess_server\n`), every WebSocket text message is answered `ACK: <payload>`; port 8080 hardcoded; it does not link `core/` yet. The sync format remains FEN (`GameState::to_fen` / `load_fen`). Boost 1.92.0 headers (Beast + Asio, header-only) are vendored in `server/external/boost_1_92_0/` (gitignored).
 - `client/node_2d.*`, `client/src/test.gd`, `client/src/node_2d.tscn` are leftover editor templates.
 
 ## Deeper docs

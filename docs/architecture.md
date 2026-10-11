@@ -1,6 +1,6 @@
 # Architecture
 
-The project follows a hexagonal (ports-and-adapters) layout: a pure domain core with adapters on each side. The Godot client is one adapter; a server is planned as another.
+The project follows a hexagonal (ports-and-adapters) layout: a pure domain core with adapters on each side. The Godot client is one adapter; `server/` is another, in progress.
 
 ## Structure
 
@@ -53,6 +53,7 @@ Dependency direction is strictly **inward**: GDScript → facade → interop →
 | Facade | `client/src/chess_game.*` | `ChessGame` (GDCLASS, `RefCounted`): exposes game operations to GDScript and owns the click-selection state machine. |
 | Presentation | `client/scenes/` | Builds the board, renders squares/pieces, emits input signals, updates the HUD. Holds no rules. |
 | Composition | `scenes/main/main.tscn` | Instantiates Board + HUD and wires `move_played` → status text. |
+| Server | `server/` | Boost.Beast HTTP listener with WebSocket upgrade and per-client sessions (`ChessServer.cpp`). Echo placeholder today; will link `core/` for rules and FEN sync. |
 
 ## Data flow: one move
 
@@ -93,7 +94,7 @@ When `move["promotion"]` is `true`, `board.gd` stops: it stores the move, shows 
 - **Selection state lives in the facade** (`has_selected`, `selected` in `ChessGame`), not in GDScript. GDScript stays a pure presenter: one method call returns everything needed to render.
 - **Full piece respawn on move** (`_sync_pieces` frees and re-instantiates all pieces). Simple and correct for a placeholder renderer; can become incremental updates later without touching the facade.
 - **FEN is the state interchange format.** `to_fen()` / `load_fen()` round-trip exactly (tested). The planned network protocol syncs states via FEN rather than reimplementing serialization per side.
-- **`server/` will link `core/` via its own SCons build**, the same way `client/SConstruct` pulls in `core/SConscript`. No Godot code is involved there.
+- **`server/` builds with its own SCons project and vendored Boost** (`server/SConstruct`, headers in `server/external/boost_1_92_0/`, gitignored — Beast and Boost.Asio are header-only, no Boost build step). `ChessServer.cpp` is currently an HTTP + WebSocket echo placeholder (`GET` → `200 OK`, WS text → `ACK: <payload>` on port 8080, connection-tested by `server/tests/test_connection.ps1`); the next step is linking `core/` for rules and FEN-based sync. No Godot code is involved there.
 
 ## Boundary rules
 

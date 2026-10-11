@@ -2,6 +2,10 @@
 client/.godot/
 client/.cache/
 
+# Server caches and vendored Boost headers (Beast + Asio, header-only)
+server/.cache/
+server/external/
+
 # Build artifacts
 *.obj
 *.lib

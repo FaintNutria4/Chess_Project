@@ -1,6 +1,6 @@
 # Chess Project
 
-A chess game built with **Godot 4.7** (GDScript + 2D scenes) and a **C++ GDExtension** that contains all chess rules. The rules engine lives in a pure C++ `core/` library designed to be shared with a future multiplayer `server/`.
+A chess game built with **Godot 4.7** (GDScript + 2D scenes) and a **C++ GDExtension** that contains all chess rules. The rules engine lives in a pure C++ `core/` library designed to be shared with the multiplayer `server/` (a Boost.Beast HTTP + WebSocket server, currently an echo placeholder).
 
 ## Layout
 
@@ -15,7 +15,9 @@ Chess_Project/
 ├── core/            Pure C++17 chess domain (no Godot dependencies)
 │   ├── domain/      types, board, rules, game_state, fen
 │   └── tests/       headless test suite
-├── server/          reserved for the future server (links core/)
+├── server/          Boost.Beast HTTP+WebSocket server (echo placeholder; links core/ later)
+│   ├── external/    vendored Boost headers (gitignored)
+│   └── tests/       connection test (test_connection.ps1)
 ├── docs/            detailed documentation
 ├── AGENTS.md        conventions for AI models
 └── compile_commands.json   clangd database (repo root)
@@ -68,6 +70,17 @@ scons platform=windows target=template_debug arch=x86_64 api_version=4.7 compile
 ```
 
 Then restart the clangd language server in your editor.
+
+### 5. Run the server (optional)
+
+```powershell
+cd server
+scons
+.\chess_server.exe          # listens on 127.0.0.1:8080 (Ctrl+C to stop)
+.\tests\test_connection.ps1 # expect: 6 checks, 0 failures
+```
+
+The connection test starts and stops the server itself — don't run it while `chess_server.exe` is already listening on port 8080. Add `-v` to see step-by-step progress.
 
 ## Documentation
 

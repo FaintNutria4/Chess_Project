@@ -128,7 +128,7 @@ func set_status(text: String)   # $StatusLabel.text
 ### Autoloads
 
 - `GameSession`: `player_color: String = "white"`, `networked := false`. Future: which side the human plays.
-- `Network`: `active`, `connect_to_server(address, port)` (no-op stub), `send_move(from, to)` (no-op), signals `connected`, `disconnected`, `move_received(from, to)`. Filled in when `server/` exists; sync format will be FEN-based.
+- `Network`: `active`, `connect_to_server(address, port)` (no-op stub), `send_move(from, to)` (no-op), signals `connected`, `disconnected`, `move_received(from, to)`. `server/` exists as an echo placeholder; these fill in when the real protocol lands — sync format will be FEN-based.
 
 ## Layout constants
 

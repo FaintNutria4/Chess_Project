@@ -1,6 +1,6 @@
 # Core API (`core/domain/`)
 
-Pure C++17 chess domain. No Godot includes — this library is shared between the client GDExtension and the future server.
+Pure C++17 chess domain. No Godot includes — this library is shared between the client GDExtension and `server/`.
 
 Namespace: `chess` (rules functions in `chess::rules`).
 
